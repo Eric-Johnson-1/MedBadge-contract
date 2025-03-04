@@ -5,14 +5,14 @@ let firstAccount
 let chainSelector
 // let linkToken_
 let ccipLocalSimulator
-let myNft
+let medBadgeNft
 let wrappedNft
 let nftPoolLockAndRelease
 let nftPoolBurnAndMint
 before(async () => {
     await deployments.fixture("all")
     firstAccount = (await getNamedAccounts()).firstAccount
-    myNft = await ethers.getContract("MyNft")
+    medBadgeNft = await ethers.getContract("MedBadgeNft")
     ccipLocalSimulator = await ethers.getContract("CCIPLocalSimulator")
     wrappedNft = await ethers.getContract("WrappedNft")
     nftPoolLockAndRelease = await ethers.getContract("NftPoolLockAndRelease")
@@ -24,9 +24,9 @@ before(async () => {
 
 describe("test if the nft can be minted successfully", async () => {
     it("test if the owner of nft is minter", async () => {
-        await myNft.safeMint(firstAccount)
-        // const ownerOfFirstNft = await myNft.ownerOf(0)
-        expect(await myNft.ownerOf(0)).to.equal(firstAccount)
+        await medBadgeNft.safeMint(firstAccount)
+        // const ownerOfFirstNft = await medBadgeNft.ownerOf(0)
+        expect(await medBadgeNft.ownerOf(0)).to.equal(firstAccount)
     })
 })
 
@@ -39,10 +39,10 @@ describe("test if the nft can be locked and transferred to destchain", async () 
         // console.log("NFT Pool Lock and Release LINK Balance:", balance.toString());
 
         await ccipLocalSimulator.requestLinkFromFaucet(nftPoolLockAndRelease.target, ethers.parseEther("10"))
-        await myNft.approve(nftPoolLockAndRelease.target, 0)
+        await medBadgeNft.approve(nftPoolLockAndRelease.target, 0)
 
         await nftPoolLockAndRelease.lockAndSendNft(0, firstAccount, chainSelector, nftPoolBurnAndMint.target)
-        expect(await myNft.ownerOf(0)).to.equal(nftPoolLockAndRelease.target)
+        expect(await medBadgeNft.ownerOf(0)).to.equal(nftPoolLockAndRelease.target)
     })
 
     it("check if wnft's account is owner", async () => {
@@ -60,6 +60,6 @@ describe("test if the nft can be burned and transferred back to sourcechain", as
     })
 
     it("owner of the NFT is transferred to firstAccount", async () => {
-        expect(await myNft.ownerOf(0)).to.equal(firstAccount)
+        expect(await medBadgeNft.ownerOf(0)).to.equal(firstAccount)
     })
 })
