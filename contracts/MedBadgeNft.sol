@@ -21,18 +21,6 @@ contract MedBadgeNft is
     // string public constant METADATA_URI =
     //     "ipfs://QmXw7TEAJWKjKifvLE25Z9yjvowWk2NWY3WgnZPUto9XoA";
 
-    // Structs
-    struct VaccinationRecord {
-        string img;
-        string documentType;
-        bytes32 documentIdHash;
-        string vaccineType;
-        string vaccinationDose;
-        uint256 timestamp;
-        uint256 level;
-        uint256 nextUpdate;
-    }
-
     // State variables
     mapping(uint256 => VaccinationRecord) private _records;
     uint256 private _tokenIdCounter;
@@ -68,27 +56,11 @@ contract MedBadgeNft is
     // Main functions
     function issue(
         address recipient,
-        string memory img,
-        string memory documentType,
-        bytes32 documentIdHash,
-        string memory vaccineType,
-        string memory vaccinationDose
+        string memory metadata_uri
     ) external onlyOwner returns (uint256) {
-        uint256 tokenId = _tokenIdCounter++;
-        _safeMint(recipient, tokenId);
+        safeMint(recipient, metadata_uri)
 
-        _records[tokenId] = VaccinationRecord({
-            img: img,
-            documentType: documentType,
-            documentIdHash: documentIdHash,
-            vaccineType: vaccineType,
-            vaccinationDose: vaccinationDose,
-            timestamp: block.timestamp,
-            level: 0,
-            nextUpdate: 30
-        });
-
-        emit VaccinationRecorded(tokenId, recipient);
+        emit VaccinationRecorded(_tokenIdCounter - 1, recipient);
         return tokenId;
     }
 
@@ -136,7 +108,6 @@ contract MedBadgeNft is
     function calculateDiscount(address user) external view returns (uint256) {
         uint256 totalLevel = 0;
         uint256 nftCount = 0;
-
         for (uint256 i = 1; i < _tokenIdCounter; i++) {
             if (_exists(i) && ownerOf(i) == user) {
                 totalLevel += _records[i].level;
@@ -181,10 +152,10 @@ contract MedBadgeNft is
         return string(buffer);
     }
 
-    function safeMint(address to) public {
-        uint256 tokenId = _nextTokenId++;
+    function safeMint(address to, string memory metadata_uri) public {
+        uint256 tokenId = _tokenIdCounter++;
         _safeMint(to, tokenId);
-        _setTokenURI(tokenId, METADATA_URI);
+        _setTokenURI(tokenId, metadata_uri);
     }
 
     // The following functions are overrides required by Solidity.
