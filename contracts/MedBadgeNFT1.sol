@@ -18,10 +18,7 @@ contract MedBadgeNFT1 is
     // string constant public METADATA_URI = "ipfs://QmXw7TEAJWKjKifvLE25Z9yjvowWk2NWY3WgnZPUto9XoA";
     uint256 private _nextTokenId;
 
-    constructor(
-        string memory tokenName,
-        string memory tokenSymbol
-    ) ERC721(tokenName, tokenSymbol) Ownable(msg.sender) {}
+    constructor() ERC721("MedBadge", "MBG") Ownable(msg.sender) {}
 
     function issue(address to, string memory metadata_URI) public {
         uint256 tokenId = _nextTokenId++;
