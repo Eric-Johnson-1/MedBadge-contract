@@ -1,5 +1,5 @@
-// require('dotenv').config() // dotenv不安全，用env-enc
-require('@chainlink/env-enc').config() // 在这个配置文件中有了这句，因此env-enc中的环境变量可以在整个项目的上下文中被访问，其它文件中就不需要写这句了
+require('dotenv').config() // dotenv不安全，用env-enc
+// require('@chainlink/env-enc').config() // 在这个配置文件中有了这句，因此env-enc中的环境变量可以在整个项目的上下文中被访问，其它文件中就不需要写这句了
 
 // 这一堆是hardhat-deploy相关的：
 require("@nomicfoundation/hardhat-ethers");
