@@ -45,13 +45,13 @@ contract MedBadgeNft is
         _safeMint(recipient, tokenId);
         _setTokenURI(tokenId, metadata_uri);
         _tokenIdCounter++;
-        require(_exists(tokenId), "Token minting failed");
+        _requireOwned(tokenId);
         emit VaccinationRecorded(tokenId, recipient);
         return tokenId;
     }
 
     function buy(uint256 tokenId) external payable {
-        require(_exists(tokenId), "Token does not exist");
+        _requireOwned(tokenId);
         require(ownerOf(tokenId) == msg.sender, "Not token owner");
         VaccinationRecord storage record = _records[tokenId];
         uint256 numDays = msg.value / DAILY_COST;
@@ -65,13 +65,13 @@ contract MedBadgeNft is
 
     function checkUpkeep(
         bytes calldata
-    ) external view override returns (bool upkeepNeeded, bytes memory) {
+    ) external pure override returns (bool upkeepNeeded, bytes memory) {
         return (true, "");
     }
 
     function performUpkeep(bytes calldata) external override {
         for (uint256 i = 1; i < _tokenIdCounter; i++) {
-            if (_exists(i)) {
+            if (_ownerOf(i) != address(0)) {
                 VaccinationRecord storage record = _records[i];
                 if (record.nextUpdate > 0) {
                     record.nextUpdate--;
@@ -95,7 +95,7 @@ contract MedBadgeNft is
     function getVaccinationRecord(
         uint256 tokenId
     ) external view returns (VaccinationRecord memory) {
-        require(_exists(tokenId), "Token does not exist");
+        _requireOwned(tokenId);
         return _records[tokenId];
     }
 
@@ -103,7 +103,7 @@ contract MedBadgeNft is
         uint256 totalLevel = 0;
         uint256 nftCount = 0;
         for (uint256 i = 1; i < _tokenIdCounter; i++) {
-            if (_exists(i) && ownerOf(i) == user) {
+            if (_ownerOf(i) != address(0) && ownerOf(i) == user) {
                 totalLevel += _records[i].level;
                 nftCount++;
             }
@@ -111,16 +111,6 @@ contract MedBadgeNft is
         if (nftCount == 0) return 0;
         uint256 discount = (totalLevel * 5 + nftCount * 2);
         return discount > 50 ? 50 : discount;
-    }
-
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 firstTokenId,
-        uint256 batchSize
-    ) internal override(ERC721, ERC721Enumerable, ERC721URIStorage) {
-        require(from == address(0) || to == address(0), "Token is SoulBound");
-        super._beforeTokenTransfer(from, to, firstTokenId, batchSize);
     }
 
     function toString(uint256 value) internal pure returns (string memory) {
@@ -156,11 +146,7 @@ contract MedBadgeNft is
         address to,
         uint256 tokenId,
         address auth
-    )
-        internal
-        override(ERC721, ERC721Enumerable, ERC721URIStorage)
-        returns (address)
-    {
+    ) internal override(ERC721, ERC721Enumerable) returns (address) {
         return super._update(to, tokenId, auth);
     }
 
