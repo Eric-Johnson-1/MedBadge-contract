@@ -23,7 +23,7 @@ const HOLESKY_RPC_URL = process.env.HOLESKY_RPC_URL
 const PRIVATE_KEY_1 = process.env.PRIVATE_KEY_1
 const PRIVATE_KEY_2 = process.env.PRIVATE_KEY_2
 
-const accounts = [PRIVATE_KEY_1, PRIVATE_KEY_2]
+const accounts = [PRIVATE_KEY_1]
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -39,21 +39,21 @@ module.exports = {
         destChain: "amoy"
       }
     },
-    amoy: {
-      url: AMOY_RPC_URL,
-      accounts: accounts,
-      chainId: 80002,
-      blockConfirmations: testnetWaitConfirmations,
-      companionNetworks: {
-        destChain: "sepolia"
-      }
-    },
-    holesky: {
-      url: HOLESKY_RPC_URL,
-      accounts: accounts,
-      chainId: 17000,
-      blockConfirmations: testnetWaitConfirmations,
-    },
+    // amoy: {
+    //   url: AMOY_RPC_URL,
+    //   accounts: accounts,
+    //   chainId: 80002,
+    //   blockConfirmations: testnetWaitConfirmations,
+    //   companionNetworks: {
+    //     destChain: "sepolia"
+    //   }
+    // },
+    // holesky: {
+    //   url: HOLESKY_RPC_URL,
+    //   accounts: accounts,
+    //   chainId: 17000,
+    //   blockConfirmations: testnetWaitConfirmations,
+    // },
   },
   etherscan: {
     // apiKey里的键是规定好的不能写成不一样的，比如polygonAmoy不能写成amoy

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// Compatible with OpenZeppelin Contracts ^5.0.0
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
@@ -17,67 +16,56 @@ contract MedBadgeNft is
     Ownable,
     AutomationCompatible
 {
-    // uint256 private _nextTokenId;
-    // string public constant METADATA_URI =
-    //     "ipfs://QmXw7TEAJWKjKifvLE25Z9yjvowWk2NWY3WgnZPUto9XoA";
-
-    // State variables
-    mapping(uint256 => VaccinationRecord) private _records;
-    uint256 private _tokenIdCounter;
-    // address private _registrarAddress;
-    uint256 private constant DAILY_COST = 0.0003 ether;
-    
-    // Events
-    event VaccinationRecorded(uint256 indexed tokenId, address indexed recipient);
-    event DaysPurchased(uint256 indexed tokenId, uint256 days);
-    event LevelUpdated(uint256 indexed tokenId, uint256 newLevel);
-
-    // constructor(
-    //     // address initialOwner,
-    //     string memory tokenName,
-    //     string memory tokenSymbol
-    // ) ERC721(tokenName, tokenSymbol) Ownable(msg.sender) {}
-
-    constructor() ERC721("MedBadge", "MBG") Ownable(msg.sender) {
-        _tokenIdCounter = 0;
+    struct VaccinationRecord {
+        uint256 level;
+        uint256 nextUpdate;
+        string img;
     }
 
-    // // Modifiers
-    // modifier onlyRegistrar() {
-    //     require(msg.sender == _registrarAddress, "Caller is not the registrar");
-    //     _;
-    // }
+    mapping(uint256 => VaccinationRecord) private _records;
+    uint256 private _tokenIdCounter;
+    uint256 private constant DAILY_COST = 0.0003 ether;
 
-    // // Administrative functions
-    // function setRegistrar(address registrar) external onlyOwner {
-    //     _registrarAddress = registrar;
-    // }
+    event VaccinationRecorded(
+        uint256 indexed tokenId,
+        address indexed recipient
+    );
+    event DaysPurchased(uint256 indexed tokenId, uint256 numDays);
+    event LevelUpdated(uint256 indexed tokenId, uint256 newLevel);
 
-    // Main functions
+    constructor() ERC721("MedBadge", "MBG") Ownable(msg.sender) {
+        _tokenIdCounter = 1;
+    }
+
     function issue(
         address recipient,
         string memory metadata_uri
     ) external onlyOwner returns (uint256) {
-        safeMint(recipient, metadata_uri)
-
-        emit VaccinationRecorded(_tokenIdCounter - 1, recipient);
+        uint256 tokenId = _tokenIdCounter;
+        _safeMint(recipient, tokenId);
+        _setTokenURI(tokenId, metadata_uri);
+        _tokenIdCounter++;
+        require(_exists(tokenId), "Token minting failed");
+        emit VaccinationRecorded(tokenId, recipient);
         return tokenId;
     }
 
     function buy(uint256 tokenId) external payable {
         require(_exists(tokenId), "Token does not exist");
         require(ownerOf(tokenId) == msg.sender, "Not token owner");
-        
         VaccinationRecord storage record = _records[tokenId];
-        uint256 days = msg.value / DAILY_COST;
-        require(days > 0 && days <= record.nextUpdate, "Invalid days amount");
-
-        record.nextUpdate -= days;
-        emit DaysPurchased(tokenId, days);
+        uint256 numDays = msg.value / DAILY_COST;
+        require(
+            numDays > 0 && numDays <= record.nextUpdate,
+            "Invalid numDays amount"
+        );
+        record.nextUpdate -= numDays;
+        emit DaysPurchased(tokenId, numDays);
     }
 
-    // Chainlink Automation functions
-    function checkUpkeep(bytes calldata) external view override returns (bool upkeepNeeded, bytes memory) {
+    function checkUpkeep(
+        bytes calldata
+    ) external view override returns (bool upkeepNeeded, bytes memory) {
         return (true, "");
     }
 
@@ -90,8 +78,13 @@ contract MedBadgeNft is
                     if (record.nextUpdate == 0) {
                         record.level++;
                         record.nextUpdate = 30;
-                        // Update image URL based on new level
-                        record.img = string(abi.encodePacked("ipfs://QmHash/", toString(record.level), ".json"));
+                        record.img = string(
+                            abi.encodePacked(
+                                "ipfs://QmHash/",
+                                toString(record.level),
+                                ".json"
+                            )
+                        );
                         emit LevelUpdated(i, record.level);
                     }
                 }
@@ -99,8 +92,9 @@ contract MedBadgeNft is
         }
     }
 
-    // View functions
-    function getVaccinationRecord(uint256 tokenId) external view returns (VaccinationRecord memory) {
+    function getVaccinationRecord(
+        uint256 tokenId
+    ) external view returns (VaccinationRecord memory) {
         require(_exists(tokenId), "Token does not exist");
         return _records[tokenId];
     }
@@ -114,25 +108,21 @@ contract MedBadgeNft is
                 nftCount++;
             }
         }
-
         if (nftCount == 0) return 0;
-        uint256 averageLevel = totalLevel / nftCount;
-        // Calculate discount based on average level and NFT count
-        return (averageLevel * 5 + nftCount * 2) min 50; // Maximum 50% discount
+        uint256 discount = (totalLevel * 5 + nftCount * 2);
+        return discount > 50 ? 50 : discount;
     }
 
-    // Override transfer functions to implement SoulBound property
     function _beforeTokenTransfer(
         address from,
         address to,
-        uint256 tokenId,
+        uint256 firstTokenId,
         uint256 batchSize
-    ) internal override {
+    ) internal override(ERC721, ERC721Enumerable, ERC721URIStorage) {
         require(from == address(0) || to == address(0), "Token is SoulBound");
-        super._beforeTokenTransfer(from, to, tokenId, batchSize);
+        super._beforeTokenTransfer(from, to, firstTokenId, batchSize);
     }
 
-    // Helper functions
     function toString(uint256 value) internal pure returns (string memory) {
         if (value == 0) {
             return "0";
@@ -152,19 +142,25 @@ contract MedBadgeNft is
         return string(buffer);
     }
 
-    function safeMint(address to, string memory metadata_uri) public {
-        uint256 tokenId = _tokenIdCounter++;
+    function safeMint(
+        address to,
+        string memory metadata_uri
+    ) external onlyOwner {
+        uint256 tokenId = _tokenIdCounter;
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, metadata_uri);
+        _tokenIdCounter++;
     }
-
-    // The following functions are overrides required by Solidity.
 
     function _update(
         address to,
         uint256 tokenId,
         address auth
-    ) internal override(ERC721, ERC721Enumerable) returns (address) {
+    )
+        internal
+        override(ERC721, ERC721Enumerable, ERC721URIStorage)
+        returns (address)
+    {
         return super._update(to, tokenId, auth);
     }
 
