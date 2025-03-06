@@ -5,7 +5,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log("MedBadgeNft deploying")
     const medBadgeNft = await deploy("MedBadgeNft", {
         from: firstAccount,
-        args: ["MedBadgeNft", "MNT"],
+        args: ["MedBadgeNft", "MBG"],
         log: true
     })
     log("MedBadgeNft deployed successfully")
@@ -13,11 +13,11 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     if (network.config.chainId === 11155111 && process.env.ETHERSCAN_API_KEY) {
         await hre.run("verify:verify", {
             address: medBadgeNft.address,
-            constructorArguments: ["MedBadgeNft", "MNT"],
+            constructorArguments: ["MedBadgeNft", "MBG"],
         });
     } else {
         console.log("Network is not sepolia, verification skipped...")
     }
 }
 
-module.exports.tags = ["sourceChain", "all"]
+module.exports.tags = ["medBadgeNft", "all"]

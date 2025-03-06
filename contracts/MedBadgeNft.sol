@@ -33,7 +33,7 @@ contract MedBadgeNft is
     event DaysPurchased(uint256 indexed tokenId, uint256 numDays);
     event LevelUpdated(uint256 indexed tokenId, uint256 newLevel);
 
-    constructor() ERC721("MedBadge", "MBG") Ownable(msg.sender) {
+    constructor() ERC721("MedBadge", "MBG") Ownable() {
         _tokenIdCounter = 1;
     }
 
