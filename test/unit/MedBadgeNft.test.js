@@ -3,6 +3,7 @@ const { ethers } = require("hardhat");
 
 describe("MedBadgeNft", function () {
     let medBadge, owner, addr1, addr2;
+    let DAILY_COST;
 
     beforeEach(async function () {
         [owner, addr1, addr2] = await ethers.getSigners();
@@ -11,6 +12,9 @@ describe("MedBadgeNft", function () {
         const MedBadgeNft = await ethers.getContractFactory("MedBadgeNft");
         medBadge = await MedBadgeNft.deploy();
         await medBadge.waitForDeployment();
+
+        // Set DAILY_COST based on contract definition
+        DAILY_COST = ethers.parseUnits("0.0003", "ether");
     });
 
     it("should mint an NFT and assign the correct URI", async function () {
@@ -25,18 +29,24 @@ describe("MedBadgeNft", function () {
         const mintTx = await medBadge.issue(addr1.address, "ipfs://test-uri-2");
         await mintTx.wait();
 
+        const numDays = 10;
+        const cost = DAILY_COST * BigInt(numDays); // Ensure cost is calculated dynamically
+
         await expect(
-            medBadge.connect(addr1).buy(1, { value: ethers.parseEther("0.003") })
+            medBadge.connect(addr1).buy(1, { value: cost })
         ).to.emit(medBadge, "DaysPurchased")
-            .withArgs(1, 10);
+            .withArgs(1, numDays);
     });
 
     it("should revert if a non-owner tries to buy days", async function () {
         const mintTx = await medBadge.issue(addr1.address, "ipfs://test-uri-3");
         await mintTx.wait();
 
+        const numDays = 10;
+        const cost = DAILY_COST * BigInt(numDays);
+
         await expect(
-            medBadge.connect(addr2).buy(1, { value: ethers.parseEther("0.003") })
+            medBadge.connect(addr2).buy(1, { value: cost })
         ).to.be.revertedWith("Not token owner");
     });
 
